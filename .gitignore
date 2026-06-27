@@ -3,3 +3,11 @@ check_size.ps1
 temp_bl.txt
 temp_frp.txt
 *.log
+
+# Output sinh luc chay
+reports/*.zip
+reports/*.txt
+driver_install_log.txt
+
+# Giu thu muc reports rong
+!reports/.gitkeep

@@ -9,7 +9,7 @@ set "YEL=%ESC%[33m"
 set "CYN=%ESC%[36m"
 set "RST=%ESC%[0m"
 
-set "PATH=%~dp0bin;%PATH%"
+set "PATH=%~dp0tools\bin;%PATH%"
 
 echo %CYN%=================================================================%RST%
 echo  Xiaomi Fastboot Unlock (Giai doan hau EDL)

@@ -2,9 +2,16 @@
 chcp 65001 >nul
 setlocal EnableExtensions EnableDelayedExpansion
 
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+set "RED=%ESC%[31m"
+set "GRN=%ESC%[32m"
+set "YEL=%ESC%[33m"
+set "CYN=%ESC%[36m"
+set "RST=%ESC%[0m"
+
 set "ROOT=%~dp0"
-set "ADB=%ROOT%bin\adb.exe"
-set "SEVEN=%ROOT%bin\7za.exe"
+set "ADB=%ROOT%tools\bin\adb.exe"
+set "SEVEN=%ROOT%tools\bin\7za.exe"
 set "REPORT_DIR=%ROOT%reports"
 
 if not exist "%REPORT_DIR%" mkdir "%REPORT_DIR%" >nul 2>nul
@@ -30,51 +37,58 @@ call :ParseZip "%LOCAL_ZIP%"
 goto :End
 
 :Mode4
-call :RunAdbBugreport || goto :End
+call :ShowStartScreen
+call :RunAdbBugreport
+if errorlevel 1 (
+    call :ShowBugreportError
+    goto :End
+)
 call :ParseZip "%LOCAL_ZIP%"
 goto :End
 
 :Menu
 cls
-echo Xiaomi UFS Checker by XuanNguyen
+echo %CYN%Xiaomi UFS Checker by XuanNguyen%RST%
 echo Momo: 0899813596
 echo Telegram: t.me/mitomtreem
-echo =================================
+echo %CYN%=================================%RST%
 echo.
-echo THIET BI DA KET NOI
+echo %YEL%THIET BI DA KET NOI%RST%
 echo -------------------
-echo Device Serial : %SERIAL%
-echo Model         : %MODEL%
-echo Codename      : %DEVICE%
+echo Device Serial : %GRN%%SERIAL%%RST%
+echo Model         : %GRN%%MODEL%%RST%
+echo Codename      : %GRN%%DEVICE%%RST%
 echo.
-echo CHON CHE DO KIEM TRA
+echo %YEL%CHON CHE DO KIEM TRA%RST%
 echo --------------------
 echo 1. Kiem tra tu bugreport Xiaomi moi nhat tren dien thoai
 echo 2. Mo My device, cho ban tao bugreport Xiaomi moi roi kiem tra
 echo 3. Parse bugreport .zip co san trong reports
-echo 4. Tao bang adb bugreport roi kiem tra
+echo %GRN%4. Tao bang adb bugreport roi kiem tra - Khuyen dung%RST%
 echo.
+echo %CYN%(Enter de mac dinh chay che do 4)%RST%
 set "CHOICE="
 set /p "CHOICE=Nhap 1/2/3/4: "
 
+if not defined CHOICE goto :Mode4
 if "%CHOICE%"=="1" goto :Mode1
 if "%CHOICE%"=="2" goto :Mode2
 if "%CHOICE%"=="3" goto :Mode3
 if "%CHOICE%"=="4" goto :Mode4
 
 echo.
-echo Lua chon khong hop le.
+echo %RED%Lua chon khong hop le.%RST%
 echo An phim bat ki de chon lai.
 pause >nul
 goto :Menu
 
 :RequireFiles
 if not exist "%ADB%" (
-    echo Loi: khong tim thay adb.exe tai "%ADB%"
+    echo %RED%Loi: khong tim thay adb.exe tai "%ADB%"%RST%
     exit /b 1
 )
 if not exist "%SEVEN%" (
-    echo Loi: khong tim thay 7za.exe tai "%SEVEN%"
+    echo %RED%Loi: khong tim thay 7za.exe tai "%SEVEN%"%RST%
     echo Hay giu thu muc bin nam canh file BAT.
     exit /b 1
 )
@@ -82,18 +96,18 @@ exit /b 0
 
 :ShowStartScreen
 cls
-echo Xiaomi UFS Checker by XuanNguyen
+echo %CYN%Xiaomi UFS Checker by XuanNguyen%RST%
 echo Momo: 0899813596
 echo Telegram: t.me/mitomtreem
-echo ================================
+echo %CYN%================================%RST%
 echo.
-echo THIET BI DA KET NOI
+echo %YEL%THIET BI DA KET NOI%RST%
 echo -------------------
-echo Device Serial : %SERIAL%
-echo Model         : %MODEL%
-echo Codename      : %DEVICE%
+echo Device Serial : %GRN%%SERIAL%%RST%
+echo Model         : %GRN%%MODEL%%RST%
+echo Codename      : %GRN%%DEVICE%%RST%
 echo.
-echo CHE DO KIEM TRA
+echo %YEL%CHE DO KIEM TRA%RST%
 echo ---------------
 echo Tool se tu dong tao bugreport bang ADB va doc thong tin UFS/RAM.
 echo Qua trinh nay co the mat 1-5 phut, vui long khong rut cap.
@@ -104,7 +118,7 @@ exit /b 0
 
 :ShowBugreportError
 cls
-echo KHONG THE TAO BUGREPORT
+echo %RED%KHONG THE TAO BUGREPORT%RST%
 echo.
 echo ADB bugreport bi loi hoac bi ngat ket noi.
 echo.
@@ -146,7 +160,7 @@ for /f "skip=1 tokens=1,2" %%A in ('"%ADB%" devices 2^>nul') do (
 exit /b 0
 
 :ShowUsbDebugGuide
-echo CHUA TIM THAY DIEN THOAI ADB
+echo %RED%CHUA TIM THAY DIEN THOAI ADB%RST%
 echo.
 echo Tool chua thay may Xiaomi o trang thai "device".
 echo Co the do chua cam cap, chua bat USB debugging, hoac chua bam Cho phep tren dien thoai.
@@ -183,9 +197,9 @@ echo --------------------------------
 exit /b 0
 
 :ShowUnauthorizedGuide
-echo DA THAY DIEN THOAI NHUNG CHUA DUOC CAP QUYEN ADB
+echo %RED%DA THAY DIEN THOAI NHUNG CHUA DUOC CAP QUYEN ADB%RST%
 echo.
-echo Trang thai hien tai: unauthorized
+echo Trang thai hien tai: %YEL%unauthorized%RST%
 if defined ADB_PROBLEM_SERIAL echo Serial: %ADB_PROBLEM_SERIAL%
 echo.
 echo Hay mo man hinh dien thoai va tim hop thoai:
@@ -229,7 +243,7 @@ echo.
 echo Dang tim bugreport Xiaomi tren dien thoai...
 call :FindLatestRemoteBugreport
 if not defined REMOTE_ZIP (
-    echo Loi: khong tim thay bugreport*.zip trong /sdcard/MIUI/debug_log, Download, Documents.
+    echo %RED%Loi: khong tim thay bugreport*.zip trong /sdcard/MIUI/debug_log, Download, Documents.%RST%
     exit /b 1
 )
 call :MakeStamp
@@ -237,7 +251,7 @@ set "LOCAL_ZIP=%REPORT_DIR%\phone_bugreport_%STAMP%.zip"
 echo Pull: %REMOTE_ZIP%
 "%ADB%" -s "%SERIAL%" pull "%REMOTE_ZIP%" "%LOCAL_ZIP%"
 if errorlevel 1 (
-    echo Loi: adb pull that bai.
+    echo %RED%Loi: adb pull that bai.%RST%
     exit /b 1
 )
 exit /b 0
@@ -279,7 +293,7 @@ if defined REMOTE_ZIP (
 )
 set /a WAIT_LEFT-=1
 if %WAIT_LEFT% GTR 0 goto :WaitBugreportLoop
-echo Loi: het thoi gian cho bugreport moi.
+echo %RED%Loi: het thoi gian cho bugreport moi.%RST%
 exit /b 1
 
 :ChooseLocalZip
@@ -299,24 +313,24 @@ if "%PICK%"=="0" (
     set "LOCAL_ZIP="
     set /p "LOCAL_ZIP=Nhap duong dan bugreport .zip: "
     if not exist "!LOCAL_ZIP!" (
-        echo Loi: file khong ton tai.
+        echo %RED%Loi: file khong ton tai.%RST%
         exit /b 1
     )
     exit /b 0
 )
 call set "LOCAL_ZIP=%%ZIP_%PICK%%%"
 if not defined LOCAL_ZIP (
-    echo Loi: lua chon khong hop le.
+    echo %RED%Loi: lua chon khong hop le.%RST%
     exit /b 1
 )
 exit /b 0
 
 :RunAdbBugreport
 cls
-echo DANG KIEM TRA
+echo %YEL%DANG KIEM TRA%RST%
 echo -------------
 echo.
-echo [1/3] Dang tao bugreport bang ADB...
+echo %CYN%[1/3]%RST% Dang tao bugreport bang ADB...
 echo       Vui long giu ket noi cap USB.
 echo.
 call :MakeStamp
@@ -336,7 +350,7 @@ exit /b 0
 :ParseZip
 set "INPUT_ZIP=%~1"
 if not exist "%INPUT_ZIP%" (
-    echo Loi: khong tim thay zip "%INPUT_ZIP%"
+    echo %RED%Loi: khong tim thay zip "%INPUT_ZIP%"%RST%
     exit /b 1
 )
 
@@ -348,7 +362,7 @@ set "CORE=%WORK%\core"
 mkdir "%OUTER%" "%CORE%" >nul 2>nul
 
 echo.
-echo [2/3] Dang giai nen bugreport...
+echo %CYN%[2/3]%RST% Dang giai nen bugreport...
 echo       Dang tim du lieu RAM / UFS trong file bugreport.
 "%SEVEN%" x -y -bd -bso0 -bsp0 "-o%OUTER%" "%INPUT_ZIP%" "bugreport-*.zip" >nul 2>nul
 
@@ -364,12 +378,12 @@ for /r "%OUTER%" %%F in (bugreport-*.zip) do (
 "%SEVEN%" x -y -bd -bso0 -bsp0 "-o%CORE%" "%CORE_ZIP%" "bugreport-*.txt" "dumpstate_board.txt" "dumpstate_log.txt" "FS\proc\meminfo" >nul 2>nul
 
 echo.
-echo [3/3] Dang phan tich thong tin bo nho...
+echo %CYN%[3/3]%RST% Dang phan tich thong tin bo nho...
 for /r "%CORE%" %%F in (*.txt) do call :ScanFile "%%F"
 for /r "%CORE%" %%F in (meminfo) do call :ScanFile "%%F"
 
 if not defined ROM_CODE if not defined RAM_CODE (
-    echo Loi: khong doc duoc thong tin RAM/ROM trong bugreport.
+    echo %RED%Loi: khong doc duoc thong tin RAM/ROM trong bugreport.%RST%
     rd /s /q "%WORK%" >nul 2>nul
     exit /b 1
 )
@@ -564,50 +578,58 @@ exit /b 0
 
 :ShowResult
 cls
-echo KET QUA KIEM TRA
-echo ================
+echo %CYN%KET QUA KIEM TRA%RST%
+echo %CYN%================%RST%
 echo.
-echo THIET BI
+echo %YEL%THIET BI%RST%
 echo --------
-echo Device Serial : %SERIAL%
-echo Model         : %MODEL%
-echo Codename      : %DEVICE%
-echo Android       : %ANDROID%
-echo Build         : %BUILD%
+echo Device Serial : %GRN%%SERIAL%%RST%
+echo Model         : %GRN%%MODEL%%RST%
+echo Codename      : %GRN%%DEVICE%%RST%
+echo Android       : %GRN%%ANDROID%%RST%
+echo Build         : %GRN%%BUILD%%RST%
 echo.
-echo UFS / ROM
+echo %YEL%UFS / ROM%RST%
 echo ---------
-echo Hang          : %ROM_VENDOR%
+echo Hang          : %GRN%%ROM_VENDOR%%RST%
 echo Ma hang       : %ROM_CODE%
-echo Dung luong    : %ROM_SIZE% GB
+echo Dung luong    : %GRN%%ROM_SIZE% GB%RST%
 echo Model         : %ROM_MODEL%
 echo Firmware      : %ROM_FW%
 echo UFS version   : %UFS_HBA%
 echo.
-echo RAM
+echo %YEL%RAM%RST%
 echo ---
-echo Hang          : %RAM_VENDOR%
+echo Hang          : %GRN%%RAM_VENDOR%%RST%
 echo Ma hang       : %RAM_CODE%
-echo Dung luong    : %RAM_SIZE% GB
+echo Dung luong    : %GRN%%RAM_SIZE% GB%RST%
 echo.
-echo TINH TRANG UFS
+echo %YEL%TINH TRANG UFS%RST%
 echo --------------
 echo Pre-EOL       : %PRE_EOL_TEXT% (%PRE_EOL_RAW%^)
 echo LifeTime A    : %LIFE_A_TEXT% (%LIFE_A_RAW%^)
 echo LifeTime B    : %LIFE_B_TEXT% (%LIFE_B_RAW%^)
 echo.
-echo FILE BAO CAO
+echo %ROM_VENDOR% | findstr /i "Kioxia Toshiba" >nul && (
+    echo %RED%--------------------------------%RST%
+    echo %RED%CANH BAO: UFS hang Toshiba/Kioxia%RST%
+    echo %RED%Loai UFS nay thuong de chai/hong nhanh hon.%RST%
+    echo %RED%Hay kiem tra ky LifeTime va Pre-EOL o tren.%RST%
+    echo %RED%--------------------------------%RST%
+    echo.
+)
+echo %YEL%FILE BAO CAO%RST%
 echo ------------
 echo Da luu tai:
-echo %REPORT_TXT%
+echo %GRN%%REPORT_TXT%%RST%
 echo.
-echo Xiaomi UFS Checker by XuanNguyen
+echo %CYN%Xiaomi UFS Checker by XuanNguyen%RST%
 echo Momo: 0899813596
 echo Telegram: t.me/mitomtreem
 echo.
-echo --------------------------------
-echo REBOOT TO BOOTLOADER
-echo --------------------------------
+echo %CYN%--------------------------------%RST%
+echo %YEL%REBOOT TO BOOTLOADER%RST%
+echo %CYN%--------------------------------%RST%
 echo Ban co muon reboot may vao Bootloader khong?
 set /p "REBOOT_CHOICE=Gop Y de reboot, phim bat ki de thoat: "
 if /i "!REBOOT_CHOICE!"=="Y" (
