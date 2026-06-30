@@ -11,3 +11,5 @@ driver_install_log.txt
 
 # Giu thu muc reports rong
 !reports/.gitkeep
+*.zip
+*.7z
