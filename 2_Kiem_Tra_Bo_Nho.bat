@@ -1,8 +1,43 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >nul 2>&1
+if errorlevel 1 chcp 437 >nul 2>&1
+
+setlocal DisableDelayedExpansion
+set "SCRIPT_DIR=%~dp0"
+set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "BAD_PATH="
+echo("%SCRIPT_DIR%" | findstr /c:"!" >nul && set "BAD_PATH=1"
+echo("%SCRIPT_DIR%" | findstr /c:"%%" >nul && set "BAD_PATH=1"
+if "%SCRIPT_DIR:~0,2%"=="\\" set "BAD_PATH=2"
+if defined BAD_PATH (
+    echo.
+    echo [LOI] Duong dan thu muc khong duoc chua ky tu dac biet hoac la UNC.
+    echo       Duong dan hien tai: "%SCRIPT_DIR%"
+    if "%BAD_PATH%"=="2" echo       Ly do: phat hien UNC path "\\server\share\..." - khong duoc ho tro.
+    if "%BAD_PATH%"=="1" echo       Ly do: phat hien ky tu "!" hoac "%%" trong duong dan.
+    echo       Hay di chuyen thu muc ra cho khac, vi du C:\Ximi_tool_Lite\
+    echo.
+    pause
+    exit /B 1
+)
+if not exist "%~dp0" (
+    echo [LOI] Khong xac dinh duoc thu muc script.
+    pause
+    exit /B 1
+)
+cd /d "%~dp0" 2>nul
+if errorlevel 1 (
+    echo [LOI] Khong the chuyen vao thu muc "%~dp0".
+    echo       Co the do thieu quyen truy cap.
+    pause
+    exit /B 1
+)
+endlocal
+
 setlocal EnableExtensions EnableDelayedExpansion
 
-for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+for /F %%a in ('echo prompt $E ^| cmd 2^>nul') do set "ESC=%%a"
+if not defined ESC set "ESC= "
 set "RED=%ESC%[31m"
 set "GRN=%ESC%[32m"
 set "YEL=%ESC%[33m"
@@ -13,26 +48,53 @@ set "ROOT=%~dp0"
 set "ADB=%ROOT%tools\bin\adb.exe"
 set "SEVEN=%ROOT%tools\bin\7za.exe"
 set "REPORT_DIR=%ROOT%reports"
+set "ERROR_CODE=0"
+set "ERROR_MSG="
 
 if not exist "%REPORT_DIR%" mkdir "%REPORT_DIR%" >nul 2>nul
 
-call :RequireFiles || goto :End
-call :GetDevice || goto :End
+call :RequireFiles
+if errorlevel 1 (
+    set "ERROR_CODE=2"
+    set "ERROR_MSG=Thieu file can thiet (adb.exe hoac 7za.exe)."
+    goto :End
+)
+call :GetDevice
+if errorlevel 1 (
+    set "ERROR_CODE=2"
+    set "ERROR_MSG=Khong tim thay thiet bi ADB."
+    goto :End
+)
 call :ReadProps
 goto :Menu
 
 :Mode1
-call :PullLatestPhoneBugreport || goto :End
+call :PullLatestPhoneBugreport
+if errorlevel 1 (
+    set "ERROR_CODE=3"
+    set "ERROR_MSG=Khong lay duoc bugreport tu dien thoai."
+    goto :End
+)
 call :ParseZip "%LOCAL_ZIP%"
 goto :End
 
 :Mode2
-call :CreateXiaomiBugreport || goto :End
+call :CreateXiaomiBugreport
+if errorlevel 1 (
+    set "ERROR_CODE=3"
+    set "ERROR_MSG=Khong tao duoc bugreport Xiaomi."
+    goto :End
+)
 call :ParseZip "%LOCAL_ZIP%"
 goto :End
 
 :Mode3
-call :ChooseLocalZip || goto :End
+call :ChooseLocalZip
+if errorlevel 1 (
+    set "ERROR_CODE=3"
+    set "ERROR_MSG=Khong chon duoc file zip."
+    goto :End
+)
 call :ParseZip "%LOCAL_ZIP%"
 goto :End
 
@@ -41,6 +103,8 @@ call :ShowStartScreen
 call :RunAdbBugreport
 if errorlevel 1 (
     call :ShowBugreportError
+    set "ERROR_CODE=3"
+    set "ERROR_MSG=ADB bugreport that bai."
     goto :End
 )
 call :ParseZip "%LOCAL_ZIP%"
@@ -631,6 +695,7 @@ echo %CYN%--------------------------------%RST%
 echo %YEL%REBOOT TO BOOTLOADER%RST%
 echo %CYN%--------------------------------%RST%
 echo Ban co muon reboot may vao Bootloader khong?
+set "REBOOT_CHOICE="
 set /p "REBOOT_CHOICE=Gop Y de reboot, phim bat ki de thoat: "
 if /i "!REBOOT_CHOICE!"=="Y" (
     echo.
@@ -650,8 +715,17 @@ set "STAMP=%STAMP:,=-%"
 set "STAMP=%STAMP: =0%"
 exit /b 0
 
+:: ===================== EXIT CHUNG =====================
 :End
 echo.
-echo(Enter hoac an phim bat ki de thoat^!
+if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" (
+    echo =================================================================
+    echo   SCRIPT KET THUC VOI LOI [code: !ERROR_CODE!]
+    if defined ERROR_MSG echo   Ly do: !ERROR_MSG!
+    echo =================================================================
+)
+echo.
+echo Nhan Enter de dong cua so nay.
 pause >nul
-exit /b %ERRORLEVEL%
+endlocal
+exit /b 0
