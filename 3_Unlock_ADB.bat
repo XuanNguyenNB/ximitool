@@ -273,7 +273,7 @@ set "count=0"
 
 :wait_adb
 call :ScanAdbState
-if "%ADB_STATE%"=="device" goto adb_reboot
+if "%ADB_STATE%"=="device" goto adb_connected
 set /a count+=1
 timeout /t 2 /nobreak >nul
 echo ADB thu ket noi[%count%/10] - trang thai: %ADB_STATE%
@@ -298,8 +298,15 @@ echo %YEL%Nhan Enter de thu phat hien lai.%RST%
 pause >nul
 goto check_adb
 
-:: ===================== BUOC 2: REBOOT FASTBOOT =====================
-:adb_reboot
+:: ===================== PHAN LUONG THEO PHUONG THUC =====================
+:adb_connected
+:: High Version (Method 2): lam viec truc tiep tren ADB, KHONG reboot fastboot truoc
+:: Normal (Method 1): can reboot fastboot de set SELinux permissive truoc
+if "%UnlockMethod%"=="2" goto method_localroot
+goto adb_reboot_for_binder
+
+:: ===================== BUOC 2 (CHI METHOD 1): REBOOT FASTBOOT DE SET SELINUX =====================
+:adb_reboot_for_binder
 "%ADB_BIN%" reboot bootloader
 timeout /t 5 /nobreak >nul
 
@@ -327,7 +334,7 @@ echo %YEL%Nhan Enter de thu phat hien lai.%RST%
 pause >nul
 goto check_fastboot
 
-:: ===================== BUOC 3: SELINUX PERMISSIVE =====================
+:: ===================== BUOC 3 (CHI METHOD 1): SELINUX PERMISSIVE QUA FASTBOOT =====================
 :selinux_permissive
 "%FASTBOOT_BIN%" oem set-gpu-preemption 0 androidboot.selinux=permissive
 "%FASTBOOT_BIN%" continue
@@ -351,7 +358,7 @@ echo.
 pause >nul
 goto check_adb_2
 
-:: ===================== BUOC 4: KIEM TRA SELINUX =====================
+:: ===================== BUOC 4 (CHI METHOD 1): KIEM TRA SELINUX =====================
 :check_selinux
 call :MakeTmp TMP_GE
 "%ADB_BIN%" shell getenforce > "%TMP_GE%" 2>&1
@@ -372,9 +379,8 @@ if errorlevel 1 (
 )
 call :CleanupTemp
 
-:: ===================== BUOC 5: FLASH ABL =====================
-if "%UnlockMethod%"=="1" goto method_binder
-if "%UnlockMethod%"=="2" goto method_localroot
+:: ===================== BUOC 5: FLASH ABL (METHOD 1 - BINDER) =====================
+goto method_binder
 
 :method_binder
 echo %YEL%Dang su dung phuong thuc BINDER IMQSNative (Method 1)%RST%
