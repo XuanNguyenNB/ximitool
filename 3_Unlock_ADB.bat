@@ -1,6 +1,4 @@
 @echo off
-chcp 65001 >nul 2>&1
-if errorlevel 1 chcp 437 >nul 2>&1
 
 setlocal DisableDelayedExpansion
 set "SCRIPT_DIR=%~dp0"
@@ -36,8 +34,16 @@ endlocal
 
 setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
+set "COMMON=%~dp0tools\common.cmd"
 set "ERROR_CODE=0"
 set "ERROR_MSG="
+
+if not exist "%COMMON%" (
+    echo [LOI] Khong tim thay tools\common.cmd tai "%COMMON%"
+    echo       Hay giu nguyen cau truc thu muc tools\.
+    pause
+    exit /B 1
+)
 
 for /F %%a in ('echo prompt $E ^| cmd 2^>nul') do set "ESC=%%a"
 if not defined ESC set "ESC= "
@@ -55,6 +61,17 @@ set "TMP_BL="
 set "TMP_FRP="
 set "TMP_DEV="
 set "TMP_GE="
+
+call "%COMMON%" InitTrace adb
+call "%COMMON%" Trace "===== ADB SCRIPT START ====="
+call "%COMMON%" Trace "Script dir: %~dp0"
+call "%COMMON%" Trace "Trace file: %TRACE_FILE%"
+
+:: Warm-up ADB server de tranh dong "* daemon not running..."
+:: gay nhieu khi parse output cua "adb devices".
+if exist "%ADB_BIN%" (
+    "%ADB_BIN%" start-server >nul 2>nul
+)
 
 call :RequireTools
 if errorlevel 1 (
@@ -141,25 +158,29 @@ set "ennea_img=payloads\ennea\8650-Ennea.img"
 cls
 echo %CYN%=== SNAPDRAGON 8 GEN 3 ===%RST%
 echo  1. Redmi K70 Pro (Thuong)
-echo  2. Xiaomi 14 (Thuong)
-echo  3. Xiaomi 14 Pro (Thuong)
-echo  4. Xiaomi 14 Ultra (Thuong)
+echo  2. Redmi K80 (Thuong)
+echo  3. Xiaomi 14 (Thuong)
+echo  4. Xiaomi 14 Pro (Thuong)
+echo  5. Xiaomi 14 Ultra (Thuong)
 echo  -------------------------------
-echo  5. Redmi K70 Pro (High Version - HyperOS Moi)
-echo  6. Xiaomi 14 (High Version - HyperOS Moi)
-echo  7. Xiaomi 14 Pro (High Version - HyperOS Moi)
-echo  8. Xiaomi 14 Ultra (High Version - HyperOS Moi)
+echo  6. Redmi K70 Pro (High Version - HyperOS Moi)
+echo  7. Redmi K80 (High Version - HyperOS Moi)
+echo  8. Xiaomi 14 (High Version - HyperOS Moi)
+echo  9. Xiaomi 14 Pro (High Version - HyperOS Moi)
+echo  10. Xiaomi 14 Ultra (High Version - HyperOS Moi)
 echo  0. Quay lai
 set "dev_choice="
 set /p dev_choice="Chon: "
 if "%dev_choice%"=="1" ( set "factoryImages=Redmik70pro" & set "unlockGPT=Redmik70pro" & set "UnlockMethod=1" )
-if "%dev_choice%"=="2" ( set "factoryImages=Xiaomi14" & set "unlockGPT=Xiaomi14" & set "UnlockMethod=1" )
-if "%dev_choice%"=="3" ( set "factoryImages=Xiaomi14pro" & set "unlockGPT=Xiaomi14pro" & set "UnlockMethod=1" )
-if "%dev_choice%"=="4" ( set "factoryImages=Xiaomi14ultra" & set "unlockGPT=Xiaomi14ultra" & set "UnlockMethod=1" )
-if "%dev_choice%"=="5" ( set "factoryImages=Redmik70pro" & set "unlockGPT=Redmik70pro" & set "UnlockMethod=2" & set "bin_name=8g3" & set "bin_alt_list=Redmik80" )
-if "%dev_choice%"=="6" ( set "factoryImages=Xiaomi14" & set "unlockGPT=Xiaomi14" & set "UnlockMethod=2" & set "bin_name=8g3" & set "bin_alt_list=Redmik80" )
-if "%dev_choice%"=="7" ( set "factoryImages=Xiaomi14pro" & set "unlockGPT=Xiaomi14pro" & set "UnlockMethod=2" & set "bin_name=8g3" & set "bin_alt_list=Redmik80" )
-if "%dev_choice%"=="8" ( set "factoryImages=Xiaomi14ultra" & set "unlockGPT=Xiaomi14ultra" & set "UnlockMethod=2" & set "bin_name=8g3" & set "bin_alt_list=Redmik80" )
+if "%dev_choice%"=="2" ( set "factoryImages=Redmik80" & set "unlockGPT=Redmik80" & set "UnlockMethod=1" )
+if "%dev_choice%"=="3" ( set "factoryImages=Xiaomi14" & set "unlockGPT=Xiaomi14" & set "UnlockMethod=1" )
+if "%dev_choice%"=="4" ( set "factoryImages=Xiaomi14pro" & set "unlockGPT=Xiaomi14pro" & set "UnlockMethod=1" )
+if "%dev_choice%"=="5" ( set "factoryImages=Xiaomi14ultra" & set "unlockGPT=Xiaomi14ultra" & set "UnlockMethod=1" )
+if "%dev_choice%"=="6" ( set "factoryImages=Redmik70pro" & set "unlockGPT=Redmik70pro" & set "UnlockMethod=2" & set "bin_name=8g3" & set "bin_alt_list=Redmik80" )
+if "%dev_choice%"=="7" ( set "factoryImages=Redmik80" & set "unlockGPT=Redmik80" & set "UnlockMethod=2" & set "bin_name=Redmik80" & set "bin_alt_list=8g3" )
+if "%dev_choice%"=="8" ( set "factoryImages=Xiaomi14" & set "unlockGPT=Xiaomi14" & set "UnlockMethod=2" & set "bin_name=8g3" & set "bin_alt_list=Redmik80" )
+if "%dev_choice%"=="9" ( set "factoryImages=Xiaomi14pro" & set "unlockGPT=Xiaomi14pro" & set "UnlockMethod=2" & set "bin_name=8g3" & set "bin_alt_list=Redmik80" )
+if "%dev_choice%"=="10" ( set "factoryImages=Xiaomi14ultra" & set "unlockGPT=Xiaomi14ultra" & set "UnlockMethod=2" & set "bin_name=Redmik80" & set "bin_alt_list=8g3" )
 if "%dev_choice%"=="0" goto main_menu
 if defined factoryImages goto pre_unlock
 goto menu_8g3
@@ -172,21 +193,19 @@ cls
 echo %CYN%=== SNAPDRAGON 8 GEN 2 ===%RST%
 echo  1. Redmi K60 Pro
 echo  2. Redmi K70
-echo  3. Redmi K80
-echo  4. Xiaomi 13
-echo  5. Xiaomi 13 Pro
-echo  6. Xiaomi 13 Ultra
-echo  7. Xiaomi Pad 6s Pro
+echo  3. Xiaomi 13
+echo  4. Xiaomi 13 Pro
+echo  5. Xiaomi 13 Ultra
+echo  6. Xiaomi Pad 6s Pro
 echo  0. Quay lai
 set "dev_choice="
 set /p dev_choice="Chon: "
 if "%dev_choice%"=="1" ( set "factoryImages=Redmik60pro" & set "unlockGPT=Redmik60pro" )
 if "%dev_choice%"=="2" ( set "factoryImages=Redmik70" & set "unlockGPT=Redmik70" )
-if "%dev_choice%"=="3" ( set "factoryImages=Redmik80" & set "unlockGPT=Redmik80" )
-if "%dev_choice%"=="4" ( set "factoryImages=Xiaomi13" & set "unlockGPT=Xiaomi13" )
-if "%dev_choice%"=="5" ( set "factoryImages=Xiaomi13pro" & set "unlockGPT=Xiaomi13pro" )
-if "%dev_choice%"=="6" ( set "factoryImages=Xiaomi13ultra" & set "unlockGPT=Xiaomi13ultra" )
-if "%dev_choice%"=="7" ( set "factoryImages=Xiaomipad6spro" & set "unlockGPT=Xiaomipad6spro" )
+if "%dev_choice%"=="3" ( set "factoryImages=Xiaomi13" & set "unlockGPT=Xiaomi13" )
+if "%dev_choice%"=="4" ( set "factoryImages=Xiaomi13pro" & set "unlockGPT=Xiaomi13pro" )
+if "%dev_choice%"=="5" ( set "factoryImages=Xiaomi13ultra" & set "unlockGPT=Xiaomi13ultra" )
+if "%dev_choice%"=="6" ( set "factoryImages=Xiaomipad6spro" & set "unlockGPT=Xiaomipad6spro" )
 if "%dev_choice%"=="0" goto main_menu
 if defined factoryImages goto pre_unlock
 goto menu_8g2
@@ -273,6 +292,7 @@ if /i "%final_confirm%" neq "Y" (
 )
 
 :: ===================== BUOC 1: KIEM TRA ADB =====================
+call "%COMMON%" Trace "STEP 1: check ADB (device=%factoryImages%, method=%UnlockMethod%)"
 echo %CYN%==========================================%RST%
 echo  %GRN%Dang kiem tra ket noi ADB%RST%
 echo %CYN%==========================================%RST%
@@ -304,7 +324,7 @@ if /i "%ADB_STATE%"=="unauthorized" (
 )
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_adb
 goto check_adb
 
 :: ===================== PHAN LUONG THEO PHUONG THUC =====================
@@ -316,6 +336,7 @@ goto adb_reboot_for_binder
 
 :: ===================== BUOC 2 (CHI METHOD 1): REBOOT FASTBOOT DE SET SELINUX =====================
 :adb_reboot_for_binder
+call "%COMMON%" Trace "STEP 2 (method 1): adb reboot bootloader"
 "%ADB_BIN%" reboot bootloader
 timeout /t 5 /nobreak >nul
 
@@ -340,11 +361,12 @@ echo %RED%    2. Kiem tra driver Fastboot da duoc cai chua%RST%
 echo %RED%    3. Thu doi cap du lieu hoac cong USB%RST%
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_fastboot
 goto check_fastboot
 
 :: ===================== BUOC 3 (CHI METHOD 1): SELINUX PERMISSIVE QUA FASTBOOT =====================
 :selinux_permissive
+call "%COMMON%" Trace "STEP 3 (method 1): fastboot set selinux permissive"
 "%FASTBOOT_BIN%" oem set-gpu-preemption 0 androidboot.selinux=permissive
 "%FASTBOOT_BIN%" continue
 if errorlevel 1 "%FASTBOOT_BIN%" reboot
@@ -364,17 +386,18 @@ echo.
 echo Vui long kiem tra cap du lieu hoac cong USB co bi long khong.
 echo Nhan Enter de thu ket noi lai.
 echo.
-pause >nul
+call "%COMMON%" SafePause retry_check_adb_2
 goto check_adb_2
 
 :: ===================== BUOC 4 (CHI METHOD 1): KIEM TRA SELINUX =====================
 :check_selinux
+call "%COMMON%" Trace "STEP 4 (method 1): check selinux (getenforce)"
 call :MakeTmp TMP_GE
 "%ADB_BIN%" shell getenforce > "%TMP_GE%" 2>&1
 if errorlevel 1 (
     echo %RED%[!] Khong chay duoc 'adb shell getenforce' - thiet bi co the bi ngat ket noi.%RST%
     echo %YEL%Nhan Enter de thu lai.%RST%
-    pause >nul
+    call "%COMMON%" SafePause retry_getenforce
     goto check_adb_2
 )
 findstr /i "Permissive" "%TMP_GE%" >nul
@@ -392,9 +415,11 @@ call :CleanupTemp
 goto method_binder
 
 :method_binder
+call "%COMMON%" Trace "STEP 5 (method 1): BINDER IMQSNative flash ABL"
 echo %YEL%Dang su dung phuong thuc BINDER IMQSNative (Method 1)%RST%
 if "%factoryImages%"=="Xiaomipad8pro" (
     set "abl_dest=/data/local/tmp/abl/abl.elf"
+    "%ADB_BIN%" shell mkdir -p /data/local/tmp/abl >nul 2>&1
 ) else (
     set "abl_dest=/data/local/tmp/abl"
 )
@@ -410,7 +435,7 @@ if errorlevel 1 (
         goto :End
     )
     echo %YEL%Push ABL that bai (lan !push_retry!/5). Hay giu ket noi on dinh roi nhan Enter de thu lai.%RST%
-    pause >nul
+    call "%COMMON%" SafePause retry_push_abl_binder
     goto flash_abl_binder
 )
 "%ADB_BIN%" shell service call miui.mqsas.IMQSNative 21 i32 1 s16 "dd" i32 1 s16 'if=!abl_dest! of=/dev/block/by-name/abl_a' s16 '/data/mqsas/log.txt' i32 60
@@ -420,20 +445,10 @@ timeout /t 1 /nobreak >nul
 goto after_flash_abl
 
 :method_localroot
+call "%COMMON%" Trace "STEP 5 (method 2): LOCAL ROOT exploit"
 echo %YEL%Dang su dung phuong thuc LOCAL EXPLOIT (Method 2)%RST%
-echo %YEL%Exploit hien tai: %bin_name%%RST%
-set "reboot_round=0"
+echo %YEL%Exploit chinh: %bin_name%%RST%
 set "bin_name_current=%bin_name%"
-
-:localroot_round
-set /a reboot_round+=1
-if !reboot_round! gtr 5 (
-    echo.
-    echo %RED%[!] Da thu 5 vong voi exploit [!bin_name_current!] khong thanh cong.%RST%
-    goto localroot_offer_alt
-)
-echo.
-echo %CYN%=== VONG THU !reboot_round!/5 - Exploit: !bin_name_current! ===%RST%
 
 :flash_bin
 if not exist "%~dp0payloads\root\!bin_name_current!\exploit" (
@@ -448,84 +463,64 @@ if not exist "%~dp0payloads\root\!bin_name_current!\su" (
     set "ERROR_MSG=Thieu file su cho LOCAL ROOT method."
     goto :End
 )
+echo %YEL%Dang push exploit ^& su (!bin_name_current!)...%RST%
 "%ADB_BIN%" push "%~dp0payloads\root\!bin_name_current!\exploit" /data/local/tmp/exploit
+if errorlevel 1 (
+    echo %YEL%Push exploit that bai. Giu cap on dinh roi nhan Enter de thu lai.%RST%
+    call "%COMMON%" SafePause retry_push_exploit
+    goto flash_bin
+)
 timeout /t 1 /nobreak >nul
 "%ADB_BIN%" push "%~dp0payloads\root\!bin_name_current!\su" /data/local/tmp/su
+if errorlevel 1 (
+    echo %YEL%Push su that bai. Giu cap on dinh roi nhan Enter de thu lai.%RST%
+    call "%COMMON%" SafePause retry_push_su
+    goto flash_bin
+)
 timeout /t 1 /nobreak >nul
 
 :get_root
 "%ADB_BIN%" shell chmod 755 /data/local/tmp/exploit /data/local/tmp/su
 "%ADB_BIN%" shell /data/local/tmp/exploit
-set "root_retry=0"
 
-:: --- Kiem tra root NGAY LAP TUC sau exploit (giong tool goc) ---
 :check_root
-call :MakeTmp TMP_ROOT
-"%ADB_BIN%" shell "/data/local/tmp/su -c 'id'" > "%TMP_ROOT%" 2>&1
-if errorlevel 1 (
-    :: ADB mat ket noi - cho ket noi lai
-    del "%TMP_ROOT%" >nul 2>nul
-    set "TMP_ROOT="
-    echo %YEL%[...] ADB mat ket noi sau exploit, dang cho ket noi lai...%RST%
-    goto post_exploit_adb_wait
-)
-type "%TMP_ROOT%"
-findstr "uid=0(root)" "%TMP_ROOT%" >nul
+echo Verify root:
+"%ADB_BIN%" shell "/data/local/tmp/su -c 'id'"
+"%ADB_BIN%" shell "/data/local/tmp/su -c 'id'" 2>&1 | findstr "uid=0(root)" >nul
 if !errorlevel! equ 0 (
     echo %GRN%[OK] Da co quyen root!%RST%
-    del "%TMP_ROOT%" >nul 2>nul
-    set "TMP_ROOT="
-    goto selinux_check_root
+    goto lr_selinux_init
 )
-del "%TMP_ROOT%" >nul 2>nul
-set "TMP_ROOT="
-set /a root_retry+=1
-if !root_retry! geq 5 (
-    echo %YEL%[!] Khong dat duoc root sau 5 lan thu (vong !reboot_round!/5).%RST%
-    echo %YEL%    Dang reboot thiet bi de thu lai tu dau...%RST%
-    "%ADB_BIN%" reboot >nul 2>&1
-    timeout /t 10 /nobreak >nul
-    goto localroot_reboot_wait
-)
-echo %RED%[!] Chua co quyen root. Dang thu lai (!root_retry!/5 - vong !reboot_round!/5)...%RST%
+echo.
+echo %YEL%Root that bai. Giu ket noi on dinh roi nhan Enter de thu lai exploit hien tai.%RST%
+echo %YEL%   [A] Enter      = thu lai exploit hien tai (!bin_name_current!)%RST%
+echo %YEL%   [B] Go 's' + Enter = chuyen sang exploit thay the%RST%
+set "retry_choice="
+set /p retry_choice="Lua chon: "
+if /i "!retry_choice!"=="s" goto localroot_offer_alt
+goto get_root
+
+:lr_selinux_init
+set "count_2=0"
+
+:lr_selinux_permissive
+set /a count_2+=1
 "%ADB_BIN%" shell /data/local/tmp/exploit
-goto check_root
-
-:: --- CHI vao day khi ADB mat ket noi (khong phai flow chinh) ---
-:post_exploit_adb_wait
-set "adb_wait=0"
-:post_exploit_adb_loop
-call :ScanAdbState
-if "%ADB_STATE%"=="device" goto check_root
-set /a adb_wait+=1
-timeout /t 2 /nobreak >nul
-if !adb_wait! leq 30 (
-    if !adb_wait!==1 echo %YEL%[...] Dang cho ADB ket noi lai...%RST%
-    if !adb_wait!==5 echo %YEL%[...] Van dang cho ADB (10s)...%RST%
-    if !adb_wait!==15 echo %YEL%[...] Van dang cho ADB (30s)...%RST%
-    if !adb_wait!==30 echo %YEL%[...] Van dang cho ADB (60s)...%RST%
-    goto post_exploit_adb_loop
-)
-:: ADB mat qua 60s - reboot va thu lai
-echo %YEL%[!] ADB mat ket noi qua 60s sau exploit. Dang reboot de thu lai...%RST%
-"%ADB_BIN%" reboot >nul 2>&1
-timeout /t 10 /nobreak >nul
-goto localroot_reboot_wait
-
-:: Cho thiet bi boot lai va ket noi ADB truoc khi vao vong moi
-:localroot_reboot_wait
 set "count=0"
-:localroot_reboot_wait_loop
-call :ScanAdbState
-if "%ADB_STATE%"=="device" goto localroot_round
+
+:lr_selinux_check_loop
+"%ADB_BIN%" shell "/data/local/tmp/su -c 'getenforce'" 2>&1 | findstr /i "Permissive" >nul
+if !errorlevel! equ 0 (
+    echo %GRN%[OK] SELinux da Permissive!%RST%
+    goto flash_abl_root
+)
 set /a count+=1
 timeout /t 2 /nobreak >nul
-echo ADB thu ket noi[%count%/15] - trang thai: %ADB_STATE%
-if %count% lss 15 goto localroot_reboot_wait_loop
-echo.
-echo %YEL%Chua phat hien lai thiet bi sau khi reboot. Nhan Enter de thu lai.%RST%
-pause >nul
-goto localroot_reboot_wait
+echo Kiem tra SELinux [!count!/10]...
+if !count! lss 10 goto lr_selinux_check_loop
+if !count_2! lss 10 goto lr_selinux_permissive
+echo %RED%[!] SELinux khong Permissive sau 10 vong. Co the do strict mode.%RST%
+goto localroot_offer_alt
 
 :: --- Hoi nguoi dung co muon thu exploit thay the khong ---
 :localroot_offer_alt
@@ -539,13 +534,12 @@ echo.
 echo %CYN%==========================================%RST%
 echo  %YEL%CHON EXPLOIT THAY THE%RST%
 echo %CYN%==========================================%RST%
-echo  Exploit [!bin_name_current!] da thu 5 vong khong thanh cong.
+echo  Exploit hien tai [!bin_name_current!] khong cho ket qua mong muon.
 echo  Ban co the thu exploit cua nhom khac:
 echo.
 set "alt_idx=0"
 set "alt_has_option=0"
 for %%E in (%bin_alt_list%) do (
-    :: Chi hien thi exploit khac voi cai da dung
     if /i not "%%E"=="!bin_name_current!" (
         if exist "%~dp0payloads\root\%%E\exploit" (
             set /a alt_idx+=1
@@ -570,7 +564,6 @@ if "%alt_choice%"=="0" (
     set "ERROR_MSG=Nguoi dung chon bo cuoc sau khi exploit chinh that bai."
     goto :End
 )
-:: Lay ten exploit theo lua chon
 set "new_bin=!alt_%alt_choice%!"
 if not defined new_bin (
     echo %RED%Lua chon khong hop le. Thu lai.%RST%
@@ -578,7 +571,6 @@ if not defined new_bin (
 )
 echo.
 echo %GRN%Chuyen sang exploit: !new_bin!%RST%
-:: Them exploit cu vao danh sach thay the (de nguoi dung co the quay lai)
 set "new_alt_list="
 for %%E in (!bin_alt_list!) do (
     if /i not "%%E"=="!new_bin!" (
@@ -587,75 +579,12 @@ for %%E in (!bin_alt_list!) do (
 )
 set "bin_alt_list=!new_alt_list! !bin_name_current!"
 set "bin_name_current=!new_bin!"
-set "reboot_round=0"
-echo %YEL%Dang reboot thiet bi truoc khi thu exploit moi...%RST%
-"%ADB_BIN%" reboot >nul 2>&1
-timeout /t 10 /nobreak >nul
-goto localroot_reboot_wait
-
-:selinux_check_root
-set "selinux_exploit_count=0"
-:selinux_run_exploit
-set /a selinux_exploit_count+=1
-:: Chay exploit de set SELinux permissive (giong tool goc: chay exploit lan 2)
-"%ADB_BIN%" shell /data/local/tmp/exploit
-
-:: Check SELinux NGAY LAP TUC sau exploit (giong tool goc, khong check ADB state truoc)
-set "selinux_check_count=0"
-:selinux_do_check
-call :MakeTmp TMP_GE
-"%ADB_BIN%" shell "/data/local/tmp/su -c 'getenforce'" > "%TMP_GE%" 2>&1
-if errorlevel 1 (
-    :: ADB mat - cho ket noi lai
-    del "%TMP_GE%" >nul 2>nul
-    set "TMP_GE="
-    echo %YEL%[...] ADB mat ket noi khi check SELinux, dang cho ket noi lai...%RST%
-    goto selinux_adb_recovery
-)
-findstr /i "Permissive" "%TMP_GE%" >nul
-if !errorlevel! equ 0 (
-    echo %GRN%[OK] SELinux da Permissive!%RST%
-    del "%TMP_GE%" >nul 2>nul
-    set "TMP_GE="
-    goto flash_abl_root
-)
-del "%TMP_GE%" >nul 2>nul
-set "TMP_GE="
-set /a selinux_check_count+=1
-timeout /t 2 /nobreak >nul
-echo Dang kiem tra SELinux[!selinux_check_count!/10]...
-if !selinux_check_count! lss 10 goto selinux_do_check
-:: 10 lan check khong Permissive - chay exploit lai
-echo %YEL%SELinux chua Permissive, chay exploit lai (lan !selinux_exploit_count!)...%RST%
-if !selinux_exploit_count! geq 10 (
-    echo %YEL%[!] SELinux khong Permissive sau 10 lan exploit. Dang reboot...%RST%
-    "%ADB_BIN%" reboot >nul 2>&1
-    timeout /t 10 /nobreak >nul
-    goto localroot_reboot_wait
-)
-goto selinux_run_exploit
-
-:: Chi vao day khi ADB mat trong luc check SELinux
-:selinux_adb_recovery
-set "adb_wait=0"
-:selinux_adb_recovery_loop
-call :ScanAdbState
-if "%ADB_STATE%"=="device" goto selinux_run_exploit
-set /a adb_wait+=1
-timeout /t 2 /nobreak >nul
-if !adb_wait! leq 30 (
-    if !adb_wait!==1 echo %YEL%[...] Dang cho ADB ket noi lai (SELinux phase)...%RST%
-    goto selinux_adb_recovery_loop
-)
-echo %YEL%[!] ADB mat qua 60s (SELinux phase). Dang reboot...%RST%
-"%ADB_BIN%" reboot >nul 2>&1
-timeout /t 10 /nobreak >nul
-goto localroot_reboot_wait
+goto flash_bin
 
 :flash_abl_root
 set "push_retry=0"
 :flash_abl_root_loop
-"%ADB_BIN%" push "%abl_path%" /data/local/tmp/abl.elf
+"%ADB_BIN%" push "%abl_path%" /data/local/tmp/
 if errorlevel 1 (
     set /a push_retry+=1
     if !push_retry! geq 5 (
@@ -665,7 +594,7 @@ if errorlevel 1 (
         goto :End
     )
     echo %YEL%Push ABL that bai (lan !push_retry!/5). Hay giu ket noi on dinh roi nhan Enter de thu lai.%RST%
-    pause >nul
+    call "%COMMON%" SafePause retry_push_abl_root
     goto flash_abl_root_loop
 )
 "%ADB_BIN%" shell /data/local/tmp/su dd if=/data/local/tmp/abl.elf of=/dev/block/by-name/abl_a
@@ -676,6 +605,7 @@ goto after_flash_abl
 
 :: ===================== BUOC 6: REBOOT + FLASH_ALL + FLASH GPT + ENNEA =====================
 :after_flash_abl
+call "%COMMON%" Trace "STEP 6: after_flash_abl -> adb reboot bootloader"
 "%ADB_BIN%" reboot bootloader
 timeout /t 5 /nobreak >nul
 
@@ -695,19 +625,23 @@ echo Fastboot thu ket noi[%count%/10]...
 if %count% lss 10 goto loop_check_1
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai Fastboot.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_fastboot_1
 goto check_fastboot_1
 
 :do_flash_all
+call "%COMMON%" Trace "STEP 7: do_flash_all (device=%factoryImages%)"
 if exist "%~dp0payloads\factoryImages\%factoryImages%\flash_all.bat" (
+    call "%COMMON%" Trace "STEP 7: running flash_all.bat"
     echo %YEL%Dang chay Flash All baseband firmware cho %factoryImages%...%RST%
-    setlocal
-    call "%~dp0payloads\factoryImages\%factoryImages%\flash_all.bat"
-    endlocal
+    cmd /c ""%~dp0payloads\factoryImages\%factoryImages%\flash_all.bat""
+    call "%COMMON%" Trace "STEP 7: flash_all.bat finished (errorlevel=!errorlevel!)"
     timeout /t 1 >nul
+) else (
+    call "%COMMON%" Trace "STEP 7: no flash_all.bat, skipping"
 )
 
 :check_fastboot_2
+call "%COMMON%" Trace "STEP 7b: check fastboot before flash_gpt"
 set "count=0"
 
 :loop_check_2
@@ -719,20 +653,30 @@ echo Fastboot thu ket noi[%count%/10]...
 if %count% lss 10 goto loop_check_2
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai Fastboot.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_fastboot_2
 goto check_fastboot_2
 
 :flash_gpt
+call "%COMMON%" Trace "STEP 8: flash unlockGPT -> %unlock_gpt_path%"
 "%FASTBOOT_BIN%" flash partition:4 "%unlock_gpt_path%"
+set "_EL_FGPT=%errorlevel%"
+call "%COMMON%" Trace "STEP 8: flash unlockGPT done (errorlevel=%_EL_FGPT%)"
 timeout /t 1 /nobreak >nul
+call "%COMMON%" Trace "STEP 9: fastboot boot ennea -> %ennea_full%"
 "%FASTBOOT_BIN%" boot "%ennea_full%"
+set "_EL_BOOT=%errorlevel%"
+call "%COMMON%" Trace "STEP 9: fastboot boot ennea done (errorlevel=%_EL_BOOT%)"
 timeout /t 1 /nobreak >nul
 echo %YEL%[QUAN TRONG] Dang cho thiet bi vao lai Fastboot sau khi boot Ennea...%RST%
-echo %YEL%Khi thiet bi da vao lai Fastboot, nhan phim bat ky de tiep tuc.%RST%
-pause >nul
+echo %YEL%Khi thiet bi da vao lai Fastboot, nhan Enter de tiep tuc.%RST%
+call "%COMMON%" Trace "STEP 9: waiting user Enter after ennea boot"
+call "%COMMON%" SafePause after_boot_ennea
+call "%COMMON%" Trace "STEP 9: user pressed Enter, going to check_fastboot_3"
+goto check_fastboot_3
 
 :: ===================== BUOC 7: RESTORE GPT GOC =====================
 :check_fastboot_3
+call "%COMMON%" Trace "STEP 10: check fastboot before restore_gpt"
 set "count=0"
 
 :loop_check_3
@@ -744,19 +688,23 @@ echo Fastboot thu ket noi[%count%/10]...
 if %count% lss 10 goto loop_check_3
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai Fastboot.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_fastboot_3
 goto check_fastboot_3
 
 :restore_gpt
+call "%COMMON%" Trace "STEP 11: restore_gpt (gpt_path=[%gpt_path%])"
 if defined gpt_path (
     "%FASTBOOT_BIN%" flash partition:4 "%gpt_path%"
+    call "%COMMON%" Trace "STEP 11: restore_gpt done (errorlevel=!errorlevel!)"
     timeout /t 1 /nobreak >nul
 ) else (
     echo %YEL%Khong tim thay file gpt_both4.bin (co the khong can cho model nay).%RST%
+    call "%COMMON%" Trace "STEP 11: gpt_path not defined, skipping restore"
 )
 
 :: ===================== BUOC 8: KIEM TRA KET QUA =====================
 :check_bl
+call "%COMMON%" Trace "STEP 12: check_bl (oem device-info)"
 set "bl_status=0"
 call :MakeTmp TMP_BL
 "%FASTBOOT_BIN%" oem device-info > "%TMP_BL%" 2>&1
@@ -772,6 +720,7 @@ if !errorlevel! equ 0 (
 echo.
 
 :check_frp
+call "%COMMON%" Trace "STEP 13: check_frp"
 set "frp_success=0"
 set "frp_retry=0"
 :check_frp_loop
@@ -794,7 +743,7 @@ if "!bl_status!"=="1" if "!frp_success!"=="1" (
 if "!bl_status!"=="0" if "!frp_success!"=="1" (
     echo %YEL%[CANH BAO] BL chua mo nhung FRP da xoa duoc. ABL co the chua flash dung.%RST%
     echo %YEL%Quay lai flash tu dau... Nhan Enter.%RST%
-    pause >nul
+    call "%COMMON%" SafePause bl_not_unlocked_frp_ok
     goto check_fastboot_1
 )
 if "!bl_status!"=="0" if "!frp_success!"=="0" (
@@ -813,7 +762,7 @@ if "!bl_status!"=="1" if "!frp_success!"=="0" (
         goto :End
     )
     echo %YEL%[CANH BAO] BL da mo nhung FRP chua xoa. Thu lai (!frp_retry!/5)...%RST%
-    pause >nul
+    call "%COMMON%" SafePause frp_retry
     goto check_frp_loop
 )
 
@@ -834,6 +783,7 @@ goto :End
 
 :: ===================== EXIT CHUNG =====================
 :End
+call "%COMMON%" Trace "END: ERROR_CODE=[!ERROR_CODE!] ERROR_MSG=[!ERROR_MSG!]"
 call :CleanupTemp
 echo.
 if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" (
@@ -843,10 +793,12 @@ if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" (
     echo =================================================================
 )
 echo.
-echo Nhan Enter de dong cua so nay.
-pause >nul
+if defined TRACE_FILE echo [TRACE] Log chi tiet: %TRACE_FILE%
+echo Cua so se khong tu dong dong. Nhan Enter de thoat.
+call "%COMMON%" SafePause end_of_script
 set "_EC=!ERROR_CODE!"
 endlocal & set "_EC=%_EC%"
+echo.
 if "%_EC%" neq "0" if "%_EC%" neq "" exit /B 1
 exit /B 0
 
@@ -932,8 +884,17 @@ if errorlevel 1 (
     set "TMP_DEV="
     exit /b 0
 )
-for /f "usebackq skip=1 tokens=1,2" %%A in ("%TMP_DEV%") do (
-    if not "%%B"=="" if "!ADB_STATE!"=="none" set "ADB_STATE=%%B"
+:: adb devices output:
+::   List of devices attached
+::   XXXX    device
+:: -> bo header "List of devices attached" va cac dong warning
+::    (bat dau bang "*", vi du "* daemon not running...").
+for /f "usebackq tokens=1,2" %%A in ("%TMP_DEV%") do (
+    set "_LINE_A=%%A"
+    set "_LINE_B=%%B"
+    if /i not "!_LINE_A!"=="List" if not "!_LINE_A:~0,1!"=="*" (
+        if not "!_LINE_B!"=="" if "!ADB_STATE!"=="none" set "ADB_STATE=!_LINE_B!"
+    )
 )
 del "%TMP_DEV%" >nul 2>nul
 set "TMP_DEV="

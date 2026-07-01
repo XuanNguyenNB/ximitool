@@ -13,3 +13,6 @@ driver_install_log.txt
 !reports/.gitkeep
 *.zip
 *.7z
+
+# Local reference / external tools - khong dua vao repo
+Mi8g3-unlock-highversion-windows-auto-release*/

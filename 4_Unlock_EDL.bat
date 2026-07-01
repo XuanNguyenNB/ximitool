@@ -1,6 +1,4 @@
 @echo off
-chcp 65001 >nul 2>&1
-if errorlevel 1 chcp 437 >nul 2>&1
 
 setlocal DisableDelayedExpansion
 set "SCRIPT_DIR=%~dp0"
@@ -36,8 +34,16 @@ endlocal
 
 setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
+set "COMMON=%~dp0tools\common.cmd"
 set "ERROR_CODE=0"
 set "ERROR_MSG="
+
+if not exist "%COMMON%" (
+    echo [LOI] Khong tim thay tools\common.cmd tai "%COMMON%"
+    echo       Hay giu nguyen cau truc thu muc tools\.
+    pause
+    exit /B 1
+)
 
 for /F %%a in ('echo prompt $E ^| cmd 2^>nul') do set "ESC=%%a"
 if not defined ESC set "ESC= "
@@ -54,6 +60,11 @@ set "TMP_BL="
 set "TMP_FRP="
 set "TMP_DEV="
 
+call "%COMMON%" InitTrace edl
+call "%COMMON%" Trace "===== EDL SCRIPT START ====="
+call "%COMMON%" Trace "Script dir: %~dp0"
+call "%COMMON%" Trace "Trace file: %TRACE_FILE%"
+
 call :RequireTools
 if errorlevel 1 (
     set "ERROR_CODE=2"
@@ -64,7 +75,7 @@ if errorlevel 1 (
 echo %CYN%=================================================================%RST%
 echo  Xiaomi Fastboot Unlock (Giai doan hau EDL)
 echo  Dung de hoan thanh Unlock sau khi da Flash abl.elf qua che do EDL.
-echo  Ho tro rieng cho chip Snapdragon 8 Elite, 8 Gen 2, 8s/7+ Gen 3 va 8s Gen 4.
+echo  Ho tro rieng cho chip Snapdragon 8 Elite, 8 Gen 3, 8 Gen 2, 8s/7+ Gen 3 va 8s Gen 4.
 echo %CYN%=================================================================%RST%
 echo %RED%Yeu cau: Ban da nap thanh cong file abl.elf ky thuat qua EDL.%RST%
 echo %RED%Canh bao: Qua trinh nay se xoa toan bo du lieu.%RST%
@@ -84,18 +95,20 @@ echo %CYN%==========================================%RST%
 echo  %GRN%CHON NEN TANG CHIP (SoC)%RST%
 echo %CYN%==========================================%RST%
 echo  1. Snapdragon 8 Elite (Xiaomi 15, Redmi K80 Pro...)
-echo  2. Snapdragon 8 Gen 2 (Xiaomi 13, Redmi K60 Pro...)
-echo  3. Snapdragon 8s/7+ Gen 3 (Turbo 3, Civi 4 Pro, Pad 7 Pro)
-echo  4. Snapdragon 8s Gen 4 (Turbo 4 Pro, Civi 5 Pro, Pad 8)
+echo  2. Snapdragon 8 Gen 3 (Xiaomi 14, Redmi K70 Pro, Redmi K80...)
+echo  3. Snapdragon 8 Gen 2 (Xiaomi 13, Redmi K60 Pro...)
+echo  4. Snapdragon 8s/7+ Gen 3 (Turbo 3, Civi 4 Pro, Pad 7 Pro)
+echo  5. Snapdragon 8s Gen 4 (Turbo 4 Pro, Civi 5 Pro, Pad 8)
 echo  0. Thoat
 echo %CYN%==========================================%RST%
 set "soc_choice="
-set /p soc_choice="Chon (0-4): "
+set /p soc_choice="Chon (0-5): "
 
 if "%soc_choice%"=="1" goto menu_8e
-if "%soc_choice%"=="2" goto menu_8g2
-if "%soc_choice%"=="3" goto menu_8sg3
-if "%soc_choice%"=="4" goto menu_8sg4
+if "%soc_choice%"=="2" goto menu_8g3
+if "%soc_choice%"=="3" goto menu_8g2
+if "%soc_choice%"=="4" goto menu_8sg3
+if "%soc_choice%"=="5" goto menu_8sg4
 if "%soc_choice%"=="0" (
     set "ERROR_CODE=0"
     goto :End
@@ -126,6 +139,28 @@ if "%dev_choice%"=="0" goto main_menu
 if defined factoryImages goto pre_unlock
 goto menu_8e
 
+:: ===================== MENU 8 GEN 3 =====================
+:menu_8g3
+set "ennea_img=payloads\ennea\8650-Ennea.img"
+cls
+echo %CYN%=== SNAPDRAGON 8 GEN 3 ===%RST%
+echo  1. Redmi K70 Pro
+echo  2. Redmi K80
+echo  3. Xiaomi 14
+echo  4. Xiaomi 14 Pro
+echo  5. Xiaomi 14 Ultra
+echo  0. Quay lai
+set "dev_choice="
+set /p dev_choice="Chon: "
+if "%dev_choice%"=="1" ( set "factoryImages=Redmik70pro" & set "unlockGPT=Redmik70pro" )
+if "%dev_choice%"=="2" ( set "factoryImages=Redmik80" & set "unlockGPT=Redmik80" )
+if "%dev_choice%"=="3" ( set "factoryImages=Xiaomi14" & set "unlockGPT=Xiaomi14" )
+if "%dev_choice%"=="4" ( set "factoryImages=Xiaomi14pro" & set "unlockGPT=Xiaomi14pro" )
+if "%dev_choice%"=="5" ( set "factoryImages=Xiaomi14ultra" & set "unlockGPT=Xiaomi14ultra" )
+if "%dev_choice%"=="0" goto main_menu
+if defined factoryImages goto pre_unlock
+goto menu_8g3
+
 :: ===================== MENU 8 GEN 2 =====================
 :menu_8g2
 set "ennea_img=payloads\ennea\8550-Ennea.img"
@@ -133,21 +168,19 @@ cls
 echo %CYN%=== SNAPDRAGON 8 GEN 2 ===%RST%
 echo  1. Redmi K60 Pro
 echo  2. Redmi K70
-echo  3. Redmi K80
-echo  4. Xiaomi 13
-echo  5. Xiaomi 13 Pro
-echo  6. Xiaomi 13 Ultra
-echo  7. Xiaomi Pad 6s Pro
+echo  3. Xiaomi 13
+echo  4. Xiaomi 13 Pro
+echo  5. Xiaomi 13 Ultra
+echo  6. Xiaomi Pad 6s Pro
 echo  0. Quay lai
 set "dev_choice="
 set /p dev_choice="Chon: "
 if "%dev_choice%"=="1" ( set "factoryImages=Redmik60pro" & set "unlockGPT=Redmik60pro" )
 if "%dev_choice%"=="2" ( set "factoryImages=Redmik70" & set "unlockGPT=Redmik70" )
-if "%dev_choice%"=="3" ( set "factoryImages=Redmik80" & set "unlockGPT=Redmik80" )
-if "%dev_choice%"=="4" ( set "factoryImages=Xiaomi13" & set "unlockGPT=Xiaomi13" )
-if "%dev_choice%"=="5" ( set "factoryImages=Xiaomi13pro" & set "unlockGPT=Xiaomi13pro" )
-if "%dev_choice%"=="6" ( set "factoryImages=Xiaomi13ultra" & set "unlockGPT=Xiaomi13ultra" )
-if "%dev_choice%"=="7" ( set "factoryImages=Xiaomipad6spro" & set "unlockGPT=Xiaomipad6spro" )
+if "%dev_choice%"=="3" ( set "factoryImages=Xiaomi13" & set "unlockGPT=Xiaomi13" )
+if "%dev_choice%"=="4" ( set "factoryImages=Xiaomi13pro" & set "unlockGPT=Xiaomi13pro" )
+if "%dev_choice%"=="5" ( set "factoryImages=Xiaomi13ultra" & set "unlockGPT=Xiaomi13ultra" )
+if "%dev_choice%"=="6" ( set "factoryImages=Xiaomipad6spro" & set "unlockGPT=Xiaomipad6spro" )
 if "%dev_choice%"=="0" goto main_menu
 if defined factoryImages goto pre_unlock
 goto menu_8g2
@@ -218,6 +251,7 @@ if /i "%final_confirm%" neq "Y" (
 )
 
 :: ===================== BUOC 1: KIEM TRA FASTBOOT =====================
+call "%COMMON%" Trace "STEP 1: check fastboot (initial)"
 echo %CYN%==========================================%RST%
 echo  %GRN%Dang kiem tra ket noi Fastboot%RST%
 echo %CYN%==========================================%RST%
@@ -238,20 +272,24 @@ echo %RED%    1. Hay chac chan dien thoai da vao Fastboot%RST%
 echo %RED%    2. Kiem tra driver Fastboot da duoc cai chua%RST%
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_fastboot
 goto check_fastboot
 
 :: ===================== BUOC 2: FLASH_ALL + FLASH GPT + ENNEA =====================
 :do_flash_all
+call "%COMMON%" Trace "STEP 2: do_flash_all (device=%factoryImages%)"
 if exist "%~dp0payloads\factoryImages\%factoryImages%\flash_all.bat" (
+    call "%COMMON%" Trace "STEP 2: running flash_all.bat"
     echo %YEL%Dang chay Flash All baseband firmware cho %factoryImages%...%RST%
-    setlocal
-    call "%~dp0payloads\factoryImages\%factoryImages%\flash_all.bat"
-    endlocal
+    cmd /c ""%~dp0payloads\factoryImages\%factoryImages%\flash_all.bat""
+    call "%COMMON%" Trace "STEP 2: flash_all.bat finished (errorlevel=!errorlevel!)"
     timeout /t 1 >nul
+) else (
+    call "%COMMON%" Trace "STEP 2: no flash_all.bat, skipping"
 )
 
 :check_fastboot_1
+call "%COMMON%" Trace "STEP 2b: check fastboot before flash_gpt"
 set "count=0"
 
 :loop_check_1
@@ -263,27 +301,36 @@ echo Fastboot thu ket noi[%count%/10]...
 if %count% lss 10 goto loop_check_1
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai Fastboot.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_fastboot_1
 goto check_fastboot_1
 
 :flash_gpt
+call "%COMMON%" Trace "STEP 3: flash unlockGPT -> %unlock_gpt_path%"
 "%FASTBOOT_BIN%" flash partition:4 "%unlock_gpt_path%"
-if errorlevel 1 (
+set "_EL_FGPT=%errorlevel%"
+call "%COMMON%" Trace "STEP 3: flash unlockGPT done (errorlevel=%_EL_FGPT%)"
+if not "%_EL_FGPT%"=="0" (
     echo %RED%[!] Flash unlockGPT co the that bai. Kiem tra output phia tren.%RST%
 )
 timeout /t 1 /nobreak >nul
+call "%COMMON%" Trace "STEP 4: fastboot boot ennea -> %ennea_full%"
 "%FASTBOOT_BIN%" boot "%ennea_full%"
-if errorlevel 1 (
+set "_EL_BOOT=%errorlevel%"
+call "%COMMON%" Trace "STEP 4: fastboot boot ennea done (errorlevel=%_EL_BOOT%)"
+if not "%_EL_BOOT%"=="0" (
     echo %RED%[!] Boot Ennea co the that bai. Kiem tra output phia tren.%RST%
 )
 timeout /t 1 /nobreak >nul
 echo %YEL%[QUAN TRONG] Dang cho thiet bi vao lai Fastboot sau khi boot Ennea...%RST%
-echo %YEL%Khi thiet bi da vao lai Fastboot, nhan phim bat ky de tiep tuc.%RST%
-pause >nul
+echo %YEL%Khi thiet bi da vao lai Fastboot, nhan Enter de tiep tuc.%RST%
+call "%COMMON%" Trace "STEP 4: waiting user Enter after ennea boot"
+call "%COMMON%" SafePause after_boot_ennea
+call "%COMMON%" Trace "STEP 4: user pressed Enter, going to check_fastboot_2"
 goto check_fastboot_2
 
 :: ===================== BUOC 3: RESTORE GPT GOC =====================
 :check_fastboot_2
+call "%COMMON%" Trace "STEP 5: check fastboot before restore_gpt"
 set "count=0"
 
 :loop_check_2
@@ -295,19 +342,23 @@ echo Fastboot thu ket noi[%count%/10]...
 if %count% lss 10 goto loop_check_2
 echo.
 echo %YEL%Nhan Enter de thu phat hien lai Fastboot.%RST%
-pause >nul
+call "%COMMON%" SafePause retry_check_fastboot_2
 goto check_fastboot_2
 
 :restore_gpt
+call "%COMMON%" Trace "STEP 6: restore_gpt (gpt_path=[%gpt_path%])"
 if defined gpt_path (
     "%FASTBOOT_BIN%" flash partition:4 "%gpt_path%"
+    call "%COMMON%" Trace "STEP 6: restore_gpt done (errorlevel=!errorlevel!)"
     timeout /t 1 /nobreak >nul
 ) else (
     echo %YEL%Khong tim thay file gpt_both4.bin (co the khong can cho model nay).%RST%
+    call "%COMMON%" Trace "STEP 6: gpt_path not defined, skipping restore"
 )
 
 :: ===================== BUOC 4: KIEM TRA KET QUA =====================
 :check_bl
+call "%COMMON%" Trace "STEP 7: check_bl (oem device-info)"
 set "bl_status=0"
 call :MakeTmp TMP_BL
 "%FASTBOOT_BIN%" oem device-info > "%TMP_BL%" 2>&1
@@ -323,6 +374,7 @@ if not errorlevel 1 (
 echo.
 
 :check_frp
+call "%COMMON%" Trace "STEP 8: check_frp"
 set "frp_success=0"
 set "frp_retry=0"
 :check_frp_loop
@@ -345,7 +397,7 @@ if "!bl_status!"=="1" if "!frp_success!"=="1" (
 if "!bl_status!"=="0" if "!frp_success!"=="1" (
     echo %YEL%[CANH BAO] BL chua mo nhung FRP da xoa duoc. ABL co the chua flash dung qua EDL.%RST%
     echo %YEL%Vui long flash lai abl.elf qua EDL roi thu lai. Nhan Enter.%RST%
-    pause >nul
+    call "%COMMON%" SafePause bl_not_unlocked_frp_ok
     goto check_fastboot
 )
 if "!bl_status!"=="0" if "!frp_success!"=="0" (
@@ -364,7 +416,7 @@ if "!bl_status!"=="1" if "!frp_success!"=="0" (
         goto :End
     )
     echo %YEL%[CANH BAO] BL da mo nhung FRP chua xoa. Thu lai (!frp_retry!/5)...%RST%
-    pause >nul
+    call "%COMMON%" SafePause frp_retry
     goto check_frp_loop
 )
 
@@ -385,6 +437,7 @@ goto :End
 
 :: ===================== EXIT CHUNG =====================
 :End
+call "%COMMON%" Trace "END: ERROR_CODE=[!ERROR_CODE!] ERROR_MSG=[!ERROR_MSG!]"
 call :CleanupTemp
 echo.
 if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" (
@@ -394,10 +447,12 @@ if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" (
     echo =================================================================
 )
 echo.
-echo Nhan Enter de dong cua so nay.
-pause >nul
+if defined TRACE_FILE echo [TRACE] Log chi tiet: %TRACE_FILE%
+echo Cua so se khong tu dong dong. Nhan Enter de thoat.
+call "%COMMON%" SafePause end_of_script
 set "_EC=!ERROR_CODE!"
 endlocal & set "_EC=%_EC%"
+echo.
 if "%_EC%" neq "0" if "%_EC%" neq "" exit /B 1
 exit /B 0
 
