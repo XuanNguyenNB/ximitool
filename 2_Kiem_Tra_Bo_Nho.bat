@@ -45,8 +45,8 @@ set "CYN=%ESC%[36m"
 set "RST=%ESC%[0m"
 
 set "ROOT=%~dp0"
-set "ADB=%ROOT%tools\bin\adb.exe"
-set "SEVEN=%ROOT%tools\bin\7za.exe"
+set "ADB=%ROOT%tools\adb.exe"
+set "SEVEN=%ROOT%tools\7za.exe"
 set "REPORT_DIR=%ROOT%reports"
 set "ERROR_CODE=0"
 set "ERROR_MSG="
@@ -153,7 +153,7 @@ if not exist "%ADB%" (
 )
 if not exist "%SEVEN%" (
     echo %RED%Loi: khong tim thay 7za.exe tai "%SEVEN%"%RST%
-    echo Hay giu thu muc bin nam canh file BAT.
+    echo Hay giu thu muc tools nam canh file BAT.
     exit /b 1
 )
 exit /b 0

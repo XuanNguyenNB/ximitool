@@ -176,14 +176,25 @@ goto :End
 :: ===================== EXIT CHUNG =====================
 :End
 echo.
-if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" (
+set "HAS_ERROR=0"
+if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" set "HAS_ERROR=1"
+if defined FAIL if !FAIL! GTR 0 set "HAS_ERROR=1"
+
+if "!HAS_ERROR!"=="1" (
     echo =================================================================
-    echo   SCRIPT KET THUC VOI LOI [code: !ERROR_CODE!]
-    if defined ERROR_MSG echo   Ly do: !ERROR_MSG!
+    if "!ERROR_CODE!" neq "0" if "!ERROR_CODE!" neq "" (
+        echo   SCRIPT KET THUC VOI LOI [code: !ERROR_CODE!]
+        if defined ERROR_MSG echo   Ly do: !ERROR_MSG!
+    ) else (
+        echo   SCRIPT HOAN TAT NHUNG CO DRIVER CAI LOI - xem log de biet chi tiet.
+    )
     echo =================================================================
+    echo.
+    echo Nhan Enter de dong cua so nay.
+    pause >nul
+) else (
+    echo %GRN%Cai driver hoan tat khong loi. Cua so se tu dong dong sau 3 giay...%RST%
+    timeout /t 3 /nobreak >nul 2>&1
 )
-echo.
-echo Nhan Enter de dong cua so nay.
-pause >nul
 endlocal
 exit /B 0
